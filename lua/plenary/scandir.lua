@@ -3,7 +3,7 @@ local os_sep = Path.path.sep
 local F = require "plenary.functional"
 local compat = require "plenary.compat"
 
-local uv = vim.loop
+local uv = vim.uv
 
 local m = {}
 
@@ -102,7 +102,13 @@ end
 
 local process_item = function(opts, name, typ, current_dir, next_dir, bp, data, giti, msp)
   if opts.hidden or name:sub(1, 1) ~= "." then
-    if typ == "directory" then
+    if typ == "link" then
+      local entry = uv.fs_readlink(current_dir .. os_sep .. name)
+      local ln_type = uv.fs_stat(entry).type
+      if ln_type == "directory" then
+        table.insert(next_dir, entry)
+      end
+    elseif typ == "directory" then
       local entry = current_dir .. os_sep .. name
       if opts.depth then
         table.insert(next_dir, handle_depth(bp, entry, opts.depth))
